@@ -1470,7 +1470,7 @@ void DefaultAnalysis::SaveTruth(art::Event const &e)
 {
 
   // load GTruth
-  auto const &gt_h = e.getValidHandle<std::vector<simb::GTruth>>(fMCTproducer);
+  //auto const &gt_h = e.getValidHandle<std::vector<simb::GTruth>>(fMCTproducer);
 
   // load MCTruth
   auto const &mct_h = e.getValidHandle<std::vector<simb::MCTruth>>(fMCTproducer);
@@ -1479,101 +1479,101 @@ void DefaultAnalysis::SaveTruth(art::Event const &e)
   auto const &mcp_h = e.getValidHandle<std::vector<simb::MCParticle>>(fMCPproducer);
 
   // load MCFlux
-  if(!fIgnoreMCFlux)
-  {
-    auto const& mcflux_h = e.getValidHandle<std::vector<simb::MCFlux>>(fMCFluxproducer);
-    if (mcflux_h.isValid()){ 
-      // reference: http://www.hep.utexas.edu/~zarko/wwwgnumi/v19/
-      /*
-        Decay mode that produced neutrino:
-        
-        1  K0L -> nue pi- e+
-        2  K0L -> nuebar pi+ e-
-        3  K0L -> numu pi- mu+
-        4  K0L -> numubar pi+ mu-
-        5  K+  -> numu mu+
-        6  K+  -> nue pi0 e+
-        7  K+  -> numu pi0 mu+
-        8  K-  -> numubar mu-
-        9  K-  -> nuebar pi0 e-
-        10  K-  -> numubar pi0 mu-
-        11  mu+ -> numubar nue e+
-        12  mu- -> numu nuebar e-
-        13  pi+ -> numu mu+
-        14  pi- -> numubar mu-
-      */
-      auto flux = mcflux_h->at(0);
-      _nu_parent_pdg = flux.fptype;
-      _nu_hadron_pdg = flux.ftptype;
-      _nu_decay_mode = flux.fndecay;
-      
-      if(fMakeNuMINtuple){
-        _par_decay_vx = flux.fvx;
-        _par_decay_vy = flux.fvy;
-        _par_decay_vz = flux.fvz;  
-        _par_decay_px = flux.fpdpx;
-        _par_decay_py = flux.fpdpy;
-        _par_decay_pz = flux.fpdpz;  
-        
-        TVector3 Trans_Targ2Det_beam = {5502, 7259, 67270};
-        TVector3 Decay_pos = {flux.fvx, flux.fvy, flux.fvz};
-        // std::cout << "\033[0;31mKrish:" << flux.fvx << " " << flux.fvy << " " << flux.fvz << "\033[0m" << std::endl;
-        
-        TVector3 baseline_vec = Trans_Targ2Det_beam - Decay_pos;
-        _baseline  = baseline_vec.Mag()/100.0;
-
-      }
-      
-      _nu_l = flux.fdk2gen + flux.fgen2vtx;
-      std::cout << "total Lenght = " << flux.fdk2gen << " + " << flux.fgen2vtx << " = " << _nu_l << std::endl;
-    }// if flux handle is valid
-  }// if ignore MCFlux is false
+  //if(!fIgnoreMCFlux)
+  //{
+    //auto const& mcflux_h = e.getValidHandle<std::vector<simb::MCFlux>>(fMCFluxproducer);
+    //if (mcflux_h.isValid()){ 
+      //// reference: http://www.hep.utexas.edu/~zarko/wwwgnumi/v19/
+      ///*
+        //Decay mode that produced neutrino:
+        //
+        //1  K0L -> nue pi- e+
+        //2  K0L -> nuebar pi+ e-
+        //3  K0L -> numu pi- mu+
+        //4  K0L -> numubar pi+ mu-
+        //5  K+  -> numu mu+
+        //6  K+  -> nue pi0 e+
+        //7  K+  -> numu pi0 mu+
+        //8  K-  -> numubar mu-
+        //9  K-  -> nuebar pi0 e-
+        //10  K-  -> numubar pi0 mu-
+        //11  mu+ -> numubar nue e+
+        //12  mu- -> numu nuebar e-
+        //13  pi+ -> numu mu+
+        //14  pi- -> numubar mu-
+      //*/
+      //auto flux = mcflux_h->at(0);
+      //_nu_parent_pdg = flux.fptype;
+      //_nu_hadron_pdg = flux.ftptype;
+      //_nu_decay_mode = flux.fndecay;
+      //
+      //if(fMakeNuMINtuple){
+        //_par_decay_vx = flux.fvx;
+        //_par_decay_vy = flux.fvy;
+        //_par_decay_vz = flux.fvz;  
+        //_par_decay_px = flux.fpdpx;
+        //_par_decay_py = flux.fpdpy;
+        //_par_decay_pz = flux.fpdpz;  
+        //
+        //TVector3 Trans_Targ2Det_beam = {5502, 7259, 67270};
+        //TVector3 Decay_pos = {flux.fvx, flux.fvy, flux.fvz};
+        //// std::cout << "\033[0;31mKrish:" << flux.fvx << " " << flux.fvy << " " << flux.fvz << "\033[0m" << std::endl;
+        //
+        //TVector3 baseline_vec = Trans_Targ2Det_beam - Decay_pos;
+        //_baseline  = baseline_vec.Mag()/100.0;
+//
+      //}
+      //
+      //_nu_l = flux.fdk2gen + flux.fgen2vtx;
+      //std::cout << "total Lenght = " << flux.fdk2gen << " + " << flux.fgen2vtx << " = " << _nu_l << std::endl;
+    //}// if flux handle is valid
+  //}// if ignore MCFlux is false
   
-  auto gt = gt_h->at(0);
-  _resid = gt.fResNum;
+  //auto gt = gt_h->at(0);
+  //_resid = gt.fResNum;
 
   auto mct = mct_h->at(0);
-  if (mct.NeutrinoSet()){ // NeutrinoSet(): whether the neutrino information has been set
-    auto neutrino = mct.GetNeutrino();
-    auto nu = neutrino.Nu();
-    
-    _ccnc = neutrino.CCNC();
-    _interaction = neutrino.Mode();
-    _nu_pdg = nu.PdgCode();
-    _nu_e = nu.Trajectory().E(0);
-
-    _lep_e = neutrino.Lepton().E();
-
-    _true_nu_vtx_t = nu.T();
-    _true_nu_vtx_x = nu.Vx();
-    _true_nu_vtx_y = nu.Vy();
-    _true_nu_vtx_z = nu.Vz();
-
-    if(fMakeNuMINtuple){
-      _true_nu_px = nu.Px();
-      _true_nu_py = nu.Py();
-      _true_nu_pz = nu.Pz();
-    }
-
-    float _true_nu_vtx_sce[3];
-    searchingfornues::True2RecoMappingXYZ(_true_nu_vtx_t, _true_nu_vtx_x, _true_nu_vtx_y, _true_nu_vtx_z, _true_nu_vtx_sce);
-
-    _true_nu_vtx_sce_x = _true_nu_vtx_sce[0];
-    _true_nu_vtx_sce_y = _true_nu_vtx_sce[1];
-    _true_nu_vtx_sce_z = _true_nu_vtx_sce[2];
-
-    _theta = neutrino.Theta();
-    _nu_pt = neutrino.Pt();
-    _w = neutrino.W();
-    _Q2 = neutrino.QSqr();
-    _x = neutrino.X();
-    _y = neutrino.Y();
-
-    double vtx[3] = {_true_nu_vtx_x, _true_nu_vtx_y, _true_nu_vtx_z};
-    _isVtxInFiducial = searchingfornues::isFiducial(vtx,
-                                                    fFidvolXstart, fFidvolYstart, fFidvolZstart,
-                                                    fFidvolXend, fFidvolYend, fFidvolZend);
-  }
+  //if (mct.NeutrinoSet()){ // NeutrinoSet(): whether the neutrino information has been set
+    //auto neutrino = mct.GetNeutrino();
+    //auto nu = neutrino.Nu();
+    //
+    //_ccnc = neutrino.CCNC();
+    //_interaction = neutrino.Mode();
+    //_nu_pdg = nu.PdgCode();
+    //_nu_e = nu.Trajectory().E(0);
+//
+    //_lep_e = neutrino.Lepton().E();
+//
+    //_true_nu_vtx_t = nu.T();
+    //_true_nu_vtx_x = nu.Vx();
+    //_true_nu_vtx_y = nu.Vy();
+    //_true_nu_vtx_z = nu.Vz();
+//
+    //if(fMakeNuMINtuple){
+      //_true_nu_px = nu.Px();
+      //_true_nu_py = nu.Py();
+      //_true_nu_pz = nu.Pz();
+    //}
+//
+    //float _true_nu_vtx_sce[3];
+    //searchingfornues::True2RecoMappingXYZ(_true_nu_vtx_t, _true_nu_vtx_x, _true_nu_vtx_y, _true_nu_vtx_z, _true_nu_vtx_sce);
+//
+    //_true_nu_vtx_sce_x = _true_nu_vtx_sce[0];
+    //_true_nu_vtx_sce_y = _true_nu_vtx_sce[1];
+    //_true_nu_vtx_sce_z = _true_nu_vtx_sce[2];
+//
+    //_theta = neutrino.Theta();
+    //_nu_pt = neutrino.Pt();
+    //_w = neutrino.W();
+    //_Q2 = neutrino.QSqr();
+    //_x = neutrino.X();
+    //_y = neutrino.Y();
+//
+    //double vtx[3] = {_true_nu_vtx_x, _true_nu_vtx_y, _true_nu_vtx_z};
+    //_isVtxInFiducial = searchingfornues::isFiducial(vtx,
+                                                    //fFidvolXstart, fFidvolYstart, fFidvolZstart,
+                                                    //fFidvolXend, fFidvolYend, fFidvolZend);
+  //}
   _nelec = 0;
   _nmuon = 0;
   _npi0 = 0;

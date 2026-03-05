@@ -35,11 +35,11 @@ physics.filters.nuselection.AnalysisTools.slicepurcompl.OrigHproducer: "gaushit:
 
 physics.analyzers.wcpselection.MC:		true
 physics.analyzers.wcpselection.RunBackTracking:	true
-physics.analyzers.wcpselection.SaveWeights:	true
+physics.analyzers.wcpselection.SaveWeights:	false
 physics.analyzers.wcpselection.POT_inputTag:	"generator"
 
-physics.analyzers.wcpweights.SaveWeights:	true
-physics.analyzers.wcpweights.SaveFullWeights:	true
+physics.analyzers.wcpweights.SaveWeights:	false
+physics.analyzers.wcpweights.SaveFullWeights:	false
 
 physics.analyzers.wcpselection.ccnd1_a: 0
 physics.analyzers.wcpselection.ccnd1_b: 0
