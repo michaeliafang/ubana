@@ -106,6 +106,8 @@ private:
   searchingfornues::ElectronPhotonLookUpParameters electronphoton_parameters;
   searchingfornues::CorrectionLookUpParameters correction_parameters;
 
+  bool fSaveSpacePoints;
+  std::vector<std::vector<float>> _shr_spacepoint_x_v, _shr_spacepoint_y_v, _shr_spacepoint_z_v;
   std::vector<float> _shr_energy_u_v;
   std::vector<float> _shr_energy_v_v;
   std::vector<float> _shr_energy_y_v;
@@ -195,6 +197,7 @@ ShowerAnalysis::ShowerAnalysis(const fhicl::ParameterSet &p)
   fdEdxcmLen = p.get<float>("dEdxcmLen", 4.0);   // how long the dE/dx segment should be
   fLocaldEdx = p.get<bool>("LocaldEdx", false);   // use dE/dx from calo?
 
+  fSaveSpacePoints = p.get<bool>("SaveSpacePoints", false);
   fADCtoE = p.get<std::vector<float>>("ADCtoE");
 
   fRecalibrateHits = p.get<bool>("RecalibrateHits", false);
@@ -312,6 +315,23 @@ void ShowerAnalysis::analyzeSlice(art::Event const &e, std::vector<ProxyPfpElem_
       continue;
 
     size_t n_shw = slice_pfp_v[i_pfp].get<recob::Shower>().size();
+    if (fSaveSpacePoints && n_shw <= 1)
+    {
+      // Match the shower vectors, including their default row for a non-shower PFP.
+      _shr_spacepoint_x_v.emplace_back();
+      _shr_spacepoint_y_v.emplace_back();
+      _shr_spacepoint_z_v.emplace_back();
+      if (n_shw == 1)
+      {
+        for (const auto &point : slice_pfp_v[i_pfp].get<recob::SpacePoint>())
+        {
+          const auto *xyz = point->XYZ();
+          _shr_spacepoint_x_v.back().push_back(xyz[0]);
+          _shr_spacepoint_y_v.back().push_back(xyz[1]);
+          _shr_spacepoint_z_v.back().push_back(xyz[2]);
+        }
+      }
+    }
     if (n_shw == 0)
     {
       fillDefault();
@@ -541,6 +561,12 @@ void ShowerAnalysis::setBranches(TTree *_tree)
   _tree->Branch("shr_dedx_y_v", "std::vector< float >", &_shr_dedx_y_v);
 
   _tree->Branch("shr_energy_u_v", "std::vector< float >", &_shr_energy_u_v);
+  if (fSaveSpacePoints)
+  {
+    _tree->Branch("shr_spacepoint_x_v", &_shr_spacepoint_x_v);
+    _tree->Branch("shr_spacepoint_y_v", &_shr_spacepoint_y_v);
+    _tree->Branch("shr_spacepoint_z_v", &_shr_spacepoint_z_v);
+  }
   _tree->Branch("shr_energy_v_v", "std::vector< float >", &_shr_energy_v_v);
   _tree->Branch("shr_energy_y_v", "std::vector< float >", &_shr_energy_y_v);
 
@@ -676,6 +702,9 @@ void ShowerAnalysis::fillDefault()
 void ShowerAnalysis::resetTTree(TTree *_tree)
 {
   _shr_energy_u_v.clear();
+  _shr_spacepoint_x_v.clear();
+  _shr_spacepoint_y_v.clear();
+  _shr_spacepoint_z_v.clear();
   _shr_energy_v_v.clear();
   _shr_energy_y_v.clear();
 
