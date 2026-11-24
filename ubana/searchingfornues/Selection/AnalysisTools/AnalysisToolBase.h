@@ -55,6 +55,9 @@ public:
      */
     virtual void setBranches(TTree* _tree) = 0;
 
+    // Called once per main tree entry, after all slices have been analyzed.
+    virtual void fillEventTree() {}
+
     
     /**
      * @brief resetset TTree branches

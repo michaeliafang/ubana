@@ -79,6 +79,7 @@ public:
      * @brief set branches for TTree
      */
   void setBranches(TTree *_tree) override;
+  void fillEventTree() override;
 
   /**
      * @brief reset ttree branches
@@ -107,6 +108,7 @@ private:
   searchingfornues::CorrectionLookUpParameters correction_parameters;
 
   bool fSaveSpacePoints;
+  TTree *fSpacePointTree = nullptr;
   std::vector<std::vector<float>> _shr_spacepoint_x_v, _shr_spacepoint_y_v, _shr_spacepoint_z_v;
   std::vector<float> _shr_energy_u_v;
   std::vector<float> _shr_energy_v_v;
@@ -563,9 +565,14 @@ void ShowerAnalysis::setBranches(TTree *_tree)
   _tree->Branch("shr_energy_u_v", "std::vector< float >", &_shr_energy_u_v);
   if (fSaveSpacePoints)
   {
-    _tree->Branch("shr_spacepoint_x_v", &_shr_spacepoint_x_v);
-    _tree->Branch("shr_spacepoint_y_v", &_shr_spacepoint_y_v);
-    _tree->Branch("shr_spacepoint_z_v", &_shr_spacepoint_z_v);
+    art::ServiceHandle<art::TFileService> tfs;
+    fSpacePointTree = tfs->make<TTree>("ShowerSpacePoints", "Space points associated with shower PFParticles");
+    fSpacePointTree->Branch("run", &_run, "run/I");
+    fSpacePointTree->Branch("sub", &_sub, "sub/I");
+    fSpacePointTree->Branch("evt", &_evt, "evt/I");
+    fSpacePointTree->Branch("shr_spacepoint_x_v", &_shr_spacepoint_x_v);
+    fSpacePointTree->Branch("shr_spacepoint_y_v", &_shr_spacepoint_y_v);
+    fSpacePointTree->Branch("shr_spacepoint_z_v", &_shr_spacepoint_z_v);
   }
   _tree->Branch("shr_energy_v_v", "std::vector< float >", &_shr_energy_v_v);
   _tree->Branch("shr_energy_y_v", "std::vector< float >", &_shr_energy_y_v);
@@ -627,6 +634,12 @@ void ShowerAnalysis::setBranches(TTree *_tree)
 
   _tree->Branch("shr_moliere_avg_v", "std::vector< float >", &_shr_moliere_avg_v);
   _tree->Branch("shr_moliere_rms_v", "std::vector< float >", &_shr_moliere_rms_v);
+}
+
+void ShowerAnalysis::fillEventTree()
+{
+  if (fSpacePointTree)
+    fSpacePointTree->Fill();
 }
 
 void ShowerAnalysis::fillDefault()

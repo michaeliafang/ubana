@@ -306,6 +306,8 @@ bool NeutrinoSelectionFilter::filter(art::Event &e)
   } // for all PFParticles
 
   _tree->Fill();
+  for (auto const &tool : _analysisToolsVec)
+    tool->fillEventTree();
 
   if (fBDT_branch!="" && fBDT_cut>0 && fBDT_cut<1) {
     float* bdtscore = (float*) _tree->GetBranch(fBDT_branch.c_str())->GetAddress();

@@ -1,4 +1,3 @@
 #include "run_combinedrecotree_run1_overlay_numi.fcl"
 
 physics.filters.nuselection.AnalysisTools.shower.SaveSpacePoints: true
-services.TFileService.fileName: "combinedreco_sps.root"

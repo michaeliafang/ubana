@@ -1,0 +1,3 @@
+#include "run_combinedrecotree_run1_overlay_numi_reprocess_pdronly.fcl"
+
+physics.filters.nuselection.AnalysisTools.shower.SaveSpacePoints: true
