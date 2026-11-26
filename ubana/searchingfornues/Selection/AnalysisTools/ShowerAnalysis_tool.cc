@@ -2,6 +2,7 @@
 #define ANALYSIS_SHOWERANALYSIS_CXX
 
 #include <iostream>
+#include "canvas/Utilities/Exception.h"
 #include "AnalysisToolBase.h"
 
 #include "ubobj/CRT/CRTHit.hh"
@@ -109,7 +110,11 @@ private:
 
   bool fSaveSpacePoints;
   TTree *fSpacePointTree = nullptr;
-  std::vector<std::vector<float>> _shr_spacepoint_x_v, _shr_spacepoint_y_v, _shr_spacepoint_z_v;
+  std::vector<float> _shr_spacepoint_x_v, _shr_spacepoint_y_v, _shr_spacepoint_z_v;
+  art::InputTag fSpacePointProducer;
+  art::ProductID fSpacePointProduct;
+  std::vector<int> _shr_spacepoint_shower_index_v;
+  std::vector<float> _shr_spacepoint_charge_y_v;
   std::vector<float> _shr_energy_u_v;
   std::vector<float> _shr_energy_v_v;
   std::vector<float> _shr_energy_y_v;
@@ -200,6 +205,7 @@ ShowerAnalysis::ShowerAnalysis(const fhicl::ParameterSet &p)
   fLocaldEdx = p.get<bool>("LocaldEdx", false);   // use dE/dx from calo?
 
   fSaveSpacePoints = p.get<bool>("SaveSpacePoints", false);
+  fSpacePointProducer = p.get<art::InputTag>("SpacePointproducer", "pandora");
   fADCtoE = p.get<std::vector<float>>("ADCtoE");
 
   fRecalibrateHits = p.get<bool>("RecalibrateHits", false);
@@ -257,6 +263,32 @@ void ShowerAnalysis::analyzeEvent(art::Event const &e, bool fData)
   _evt = e.event();
   _sub = e.subRun();
   _run = e.run();
+  if (fSaveSpacePoints)
+  {
+    const auto points = e.getValidHandle<std::vector<recob::SpacePoint>>(fSpacePointProducer);
+    fSpacePointProduct = points.id();
+    art::FindManyP<recob::Hit> hits(points, e, fSpacePointProducer);
+    _shr_spacepoint_shower_index_v.assign(points->size(), -1);
+    for (size_t i = 0; i < points->size(); ++i)
+    {
+      const auto *xyz = points->at(i).XYZ();
+      _shr_spacepoint_x_v.push_back(xyz[0]);
+      _shr_spacepoint_y_v.push_back(xyz[1]);
+      _shr_spacepoint_z_v.push_back(xyz[2]);
+      float charge = 0.f;
+      bool hasYHit = false;
+      if (hits.isValid())
+      {
+        for (const auto &hit : hits.at(i))
+        {
+          if (hit->WireID().Plane != 2) continue;
+          charge += hit->Integral();
+          hasYHit = true;
+        }
+      }
+      _shr_spacepoint_charge_y_v.push_back(hasYHit ? charge : -1.f);
+    }
+  }
   std::cout << "[ShowerAnalysis::analyzeEvent] Run: " << _run << ", SubRun: " << _sub << ", Event: " << _evt << std::endl;
 }
 
@@ -317,23 +349,6 @@ void ShowerAnalysis::analyzeSlice(art::Event const &e, std::vector<ProxyPfpElem_
       continue;
 
     size_t n_shw = slice_pfp_v[i_pfp].get<recob::Shower>().size();
-    if (fSaveSpacePoints && n_shw <= 1)
-    {
-      // Match the shower vectors, including their default row for a non-shower PFP.
-      _shr_spacepoint_x_v.emplace_back();
-      _shr_spacepoint_y_v.emplace_back();
-      _shr_spacepoint_z_v.emplace_back();
-      if (n_shw == 1)
-      {
-        for (const auto &point : slice_pfp_v[i_pfp].get<recob::SpacePoint>())
-        {
-          const auto *xyz = point->XYZ();
-          _shr_spacepoint_x_v.back().push_back(xyz[0]);
-          _shr_spacepoint_y_v.back().push_back(xyz[1]);
-          _shr_spacepoint_z_v.back().push_back(xyz[2]);
-        }
-      }
-    }
     if (n_shw == 0)
     {
       fillDefault();
@@ -341,6 +356,18 @@ void ShowerAnalysis::analyzeSlice(art::Event const &e, std::vector<ProxyPfpElem_
     else if (n_shw == 1)
     {
       auto shr = slice_pfp_v[i_pfp].get<recob::Shower>()[0];
+      if (fSaveSpacePoints)
+      {
+        for (const auto &point : slice_pfp_v[i_pfp].get<recob::SpacePoint>())
+        {
+          if (point.id() != fSpacePointProduct)
+            throw art::Exception(art::errors::ProductNotFound)
+              << "ShowerAnalysis: associated space point belongs to a different product than SpacePointproducer";
+          // Keep the first matching ntuple slot if two shower PFPs share a point.
+          auto &index = _shr_spacepoint_shower_index_v.at(point.key());
+          if (index == -1) index = static_cast<int>(_shr_pfp_id_v.size());
+        }
+      }
 
       _shr_dedx_u_v.push_back(shr->dEdx()[0]);
       _shr_dedx_v_v.push_back(shr->dEdx()[1]);
@@ -573,6 +600,8 @@ void ShowerAnalysis::setBranches(TTree *_tree)
     fSpacePointTree->Branch("shr_spacepoint_x_v", &_shr_spacepoint_x_v);
     fSpacePointTree->Branch("shr_spacepoint_y_v", &_shr_spacepoint_y_v);
     fSpacePointTree->Branch("shr_spacepoint_z_v", &_shr_spacepoint_z_v);
+    fSpacePointTree->Branch("shr_spacepoint_shower_index_v", &_shr_spacepoint_shower_index_v);
+    fSpacePointTree->Branch("shr_spacepoint_charge_y_v", &_shr_spacepoint_charge_y_v);
   }
   _tree->Branch("shr_energy_v_v", "std::vector< float >", &_shr_energy_v_v);
   _tree->Branch("shr_energy_y_v", "std::vector< float >", &_shr_energy_y_v);
@@ -718,6 +747,8 @@ void ShowerAnalysis::resetTTree(TTree *_tree)
   _shr_spacepoint_x_v.clear();
   _shr_spacepoint_y_v.clear();
   _shr_spacepoint_z_v.clear();
+  _shr_spacepoint_shower_index_v.clear();
+  _shr_spacepoint_charge_y_v.clear();
   _shr_energy_v_v.clear();
   _shr_energy_y_v.clear();
 
